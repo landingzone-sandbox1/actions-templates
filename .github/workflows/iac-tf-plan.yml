@@ -1,0 +1,211 @@
+name: IaC Terraform Plan
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "Environment"
+        required: true
+        type: string
+      destroy:
+        type: boolean
+        required: false
+        default: false
+      multiple_variable:
+        type: boolean
+        required: false
+        default: false
+      backend_storage_account_name:
+        description: "Backend Storage Account Name"
+        required: true
+        type: string
+      backend_container_name:
+        description: "Backend Container Name"
+        required: false
+        default: "ctnpdigitalterraform"
+        type: string
+      backend_resource_group_name:
+        description: "Backend Resource Group Name"
+        required: false
+        default: "RgPDigitalTerraformState"
+        type: string
+      backend_path:
+        description: "Backend Path to the state file"
+        required: true
+        type: string
+      tfvars_directory:
+        description: "Directory Name Into tfvars File"
+        default: "environment"
+        required: false
+        type: string
+      project_name_directory:
+        description: "Project Name Directory"
+        default: "."
+        type: string
+        required: false
+      is_named_value_key_vault:
+        description: "Validate if is Named Value Key Vault Secret"
+        default: false
+        type: boolean
+        required: false
+      AZURE_TENANT_ID:
+        required: true
+        type: string
+      AZURE_SUBSCRIPTION_ID:
+        required: true
+        type: string
+      LOGIN_TO_AZURE:
+        description: "Validate if it is necessary to log in to azure"
+        default: false
+        type: boolean
+        required: false
+      USE_RUNNER_SELF_HOSTED:
+        description: "Use runner self hosted"
+        default: false
+        type: boolean
+        required: false
+      TF_VAR_AZURE_TENANT_ID:
+        required: false
+        type: string
+      created_subscription:
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      GH_REPOSITORY_TOKEN:
+        required: true
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_CLIENT_SECRET:
+        required: true
+      ARM_ACCESS_KEY:
+        required: true
+      TF_VAR_AZURE_CLIENT_ID:
+        required: false
+      TF_VAR_AZURE_CLIENT_SECRET:
+        required: false
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate if it is necessary to log in to azure
+        id: step2
+        run: |
+          if [ "${{ inputs.LOGIN_TO_AZURE }}" == true ]; then
+            echo "LOGIN_TO_AZURE=yes" >> $GITHUB_OUTPUT
+          else
+            echo "LOGIN_TO_AZURE=no" >> $GITHUB_OUTPUT
+          fi
+    outputs:
+      LOGIN_TO_AZURE: ${{ steps.step2.outputs.LOGIN_TO_AZURE }}
+
+  plan:
+    name: Plan
+    runs-on: ${{ inputs.environment == 'integration' && 'arc-integration' || inputs.environment == 'certification' && 'arc-certification' || inputs.environment == 'production' && 'cloud' }}
+    needs: [validation]
+    container:
+      image: crpdigitalprd0200.azurecr.io/terraform:1.9.5
+      options: --user root
+      credentials:
+        username: ${{ secrets.AZURE_CLIENT_ID }}
+        password: ${{ secrets.AZURE_CLIENT_SECRET }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Git Config
+        run: |
+          git config --global url."https://git:${{ secrets.GH_REPOSITORY_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://${{ secrets.GH_REPOSITORY_TOKEN }}:x-oauth-basic@github.com/".insteadOf ssh://git@github.com
+
+      - name: Terraform Init
+        working-directory: ${{ inputs.project_name_directory }}
+        run: |
+          terraform init -input=false \
+          -backend-config="storage_account_name=${{inputs.backend_storage_account_name}}" \
+          -backend-config="container_name=${{inputs.backend_container_name}}" \
+          -backend-config="resource_group_name=${{inputs.backend_resource_group_name}}" \
+          -backend-config="key=${{inputs.backend_path}}"
+        env:
+          ARM_ACCESS_KEY: ${{ secrets.ARM_ACCESS_KEY }}
+
+      - name: Login in Azure
+        run: az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ inputs.azure_tenant_id }}
+        if: needs.validation.outputs.LOGIN_TO_AZURE == 'yes'
+
+      - name: Set subscription
+        run: az account set --subscription ${{ inputs.AZURE_SUBSCRIPTION_ID}}
+        if: needs.validation.outputs.LOGIN_TO_AZURE == 'yes'
+
+      - name: Terraform Validate
+        run: terraform validate
+        env:
+          GITHUB_APP_ID: ${{ secrets.GH_APP_ID }}
+          GITHUB_APP_INSTALLATION_ID: ${{ secrets.GH_APP_INSTALLATION_ID }}
+          GITHUB_APP_PEM_FILE: ${{ secrets.GH_APP_PEM_FILE }}
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ inputs.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ inputs.AZURE_TENANT_ID }}
+          ARM_ACCESS_KEY: ${{ secrets.ARM_ACCESS_KEY }}
+
+      - name: Terraform Plan Apply with Multiple Variable Files
+        if: ${{ !inputs.destroy && inputs.multiple_variable }}
+        id: plan_with_multiple
+        working-directory: ${{ inputs.project_name_directory }}
+        run: terraform plan -input=false -var-file="${{ inputs.tfvars_directory }}/${{ inputs.environment }}-in.tfvars" -var-file="${{ inputs.tfvars_directory }}/${{ inputs.environment }}-out.tfvars"
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ inputs.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ inputs.AZURE_TENANT_ID }}
+          ARM_ACCESS_KEY: ${{ secrets.ARM_ACCESS_KEY }}
+
+      - name: Terraform Plan Apply with Single Variable File
+        if: ${{ !inputs.destroy && !inputs.multiple_variable }}
+        id: plan
+        working-directory: ${{ inputs.project_name_directory }}
+        run: |
+          if [ "${{ inputs.created_subscription }}" == true ]; then
+           terraform plan -input=false
+          else
+           terraform plan -input=false -var-file="${{ inputs.tfvars_directory }}/${{ inputs.environment }}.tfvars"
+          fi
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ inputs.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ inputs.AZURE_TENANT_ID }}
+          ARM_ACCESS_KEY: ${{ secrets.ARM_ACCESS_KEY }}
+          TF_VAR_AZURE_CLIENT_ID: ${{  secrets.AZURE_CLIENT_ID }}
+          TF_VAR_AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          TF_VAR_AZURE_TENANT_ID: ${{ inputs.AZURE_TENANT_ID }}
+
+      - name: Terraform Plan Destroy with Multiple Variable Files
+        if: ${{ inputs.destroy && inputs.multiple_variable }}
+        working-directory: ${{ inputs.project_name_directory }}
+        run: terraform plan -destroy -input=false -var-file="${{ inputs.tfvars_directory }}/${{ inputs.environment }}-in.tfvars" -var-file="${{ inputs.tfvars_directory }}/${{ inputs.environment }}-out.tfvars"
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ inputs.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ inputs.AZURE_TENANT_ID }}
+          ARM_ACCESS_KEY: ${{ secrets.ARM_ACCESS_KEY }}
+
+      - name: Terraform Plan Destroy with Single Variable File
+        if: ${{ inputs.destroy && !inputs.multiple_variable }}
+        working-directory: ${{ inputs.project_name_directory }}
+        run: |
+          if [ "${{ inputs.created_subscription }}" == true ]; then
+           terraform plan -destroy -input=false
+          else
+           terraform plan -destroy -input=false -var-file="${{ inputs.tfvars_directory }}/${{ inputs.environment }}.tfvars"
+          fi
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ inputs.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ inputs.AZURE_TENANT_ID }}
+          ARM_ACCESS_KEY: ${{ secrets.ARM_ACCESS_KEY }}
+          TF_VAR_AZURE_CLIENT_ID: ${{  secrets.AZURE_CLIENT_ID }}
+          TF_VAR_AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          TF_VAR_AZURE_TENANT_ID: ${{ inputs.AZURE_TENANT_ID }}
