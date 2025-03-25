@@ -109,7 +109,7 @@ jobs:
           import os
   
           source_to_path = {
-              "mod-az-subscription,": "azure/subscription/",
+              "mod-az-subscription": "azure/subscription/",
               "mod-az-resource-group": "azure/resource-group/",
               "mod-az-key-vault": "azure/key-vault/",
               "mod-az-storage-account": "azure/storage-accounts/",
