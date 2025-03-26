@@ -135,7 +135,7 @@ jobs:
           source_match = re.search(r"source\s*=\s*\"git::ssh://git@github\.com/landingzone-sandbox/([^\"]+)\"", content)
           if source_match:
               source_value = source_match.group(1)
-              repo_name_match = re.search(r"(iac-mod-az-[^/]+)", source_value)
+              repo_name_match = re.search(r"(iac-mod-az-[^/\?]+)", source_value)
               if repo_name_match:
                   repo_name = repo_name_match.group(1)
                   current_repo_name = os.getenv("REPO_NAME")
