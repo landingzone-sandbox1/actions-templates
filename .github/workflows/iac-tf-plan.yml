@@ -103,7 +103,7 @@ jobs:
     runs-on: ${{ inputs.environment == 'development' && 'arc-development' || inputs.environment == 'certification' && 'arc-certification' || inputs.environment == 'production' && 'cloud' }}
     needs: [validation]
     container:
-      image: crpdigitalprd0200.azurecr.io/terraform:1.9.5
+      image: acryustfdev.azurecr.io/terraform:1.0.0
       options: --user root
       credentials:
         username: ${{ secrets.AZURE_CLIENT_ID }}
