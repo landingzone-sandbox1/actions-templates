@@ -126,6 +126,7 @@ jobs:
               "mod-az-app-service-plan": "azure/app-service-plan/",
               "mod-az-function": "azure/az-function/",
               "mod-az-application-insights": "azure/az-application-insights/",
+              "mod-az-subscription-test": "azure/subscription-test/",
           }
   
           with open("main.tf", "r") as file:
