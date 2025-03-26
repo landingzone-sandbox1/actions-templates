@@ -34,7 +34,7 @@ on:
         type: string
       tfvars_directory:
         description: "Directory Name Into tfvars File"
-        default: "environment"
+        default: "workspaces"
         required: false
         type: string
       project_name_directory:
@@ -100,7 +100,7 @@ jobs:
 
   plan:
     name: Plan
-    runs-on: ${{ inputs.environment == 'integration' && 'arc-integration' || inputs.environment == 'certification' && 'arc-certification' || inputs.environment == 'production' && 'cloud' }}
+    runs-on: ${{ inputs.environment == 'development' && 'arc-development' || inputs.environment == 'certification' && 'arc-certification' || inputs.environment == 'production' && 'cloud' }}
     needs: [validation]
     container:
       image: crpdigitalprd0200.azurecr.io/terraform:1.9.5
