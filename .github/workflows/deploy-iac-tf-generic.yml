@@ -209,7 +209,7 @@ jobs:
       TF_VAR_AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
   apply:
     name: Apply
-    uses: "landingzone-sandbox/actions-templates/.github/workflows/iac-tf-plan.yml@main"
+    uses: "landingzone-sandbox/actions-templates/.github/workflows/iac-tf-apply.yml@main"
     needs: [plan, set-backend-path]
     with:
       environment: ${{ inputs.environment }}
