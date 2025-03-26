@@ -21,12 +21,12 @@ on:
       backend_container_name:
         description: "Backend Container Name"
         required: false
-        default: "ctnpdigitalterraform"
+        default: "pending"
         type: string
       backend_resource_group_name:
         description: "Backend Resource Group Name"
         required: false
-        default: "RgPDigitalTerraformState"
+        default: "pending"
         type: string
       backend_path:
         description: "Backend Path to the state file"
