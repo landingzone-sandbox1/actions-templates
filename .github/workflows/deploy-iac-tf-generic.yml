@@ -160,7 +160,7 @@ jobs:
           case "${{ inputs.environment }}" in
             development)
               echo "backend_resource_group_name=RSGRUS2TFDevelopment" >> $GITHUB_OUTPUT
-              echo "backend_container_name=pending" >> $GITHUB_OUTPUT
+              echo "backend_container_name=ctctfstdev" >> $GITHUB_OUTPUT
               ;;
             certification)
               echo "backend_resource_group_name=pending" >> $GITHUB_OUTPUT
