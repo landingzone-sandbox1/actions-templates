@@ -180,7 +180,7 @@ jobs:
 
   plan:
     name: Plan
-    uses: "landingzone-sandbox/actions-templates/.github/workflows/iac-tf-plan.yml@latest"
+    uses: "landingzone-sandbox/actions-templates/.github/workflows/iac-tf-plan.yml@main"
     needs: [set-backend-path]
     with:
       environment: ${{ inputs.environment }}
@@ -208,7 +208,7 @@ jobs:
       TF_VAR_AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
   apply:
     name: Apply
-    uses: "landingzone-sandbox/actions-templates/.github/workflows/iac-tf-plan.yml@latest"
+    uses: "landingzone-sandbox/actions-templates/.github/workflows/iac-tf-plan.yml@main"
     needs: [plan, set-backend-path]
     with:
       environment: ${{ inputs.environment }}
