@@ -103,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [validation]
     container:
-      image: acryustfdev.azurecr.io/terraform:1.0.0
+      image: acryustfprd.azurecr.io/terraform:1.0.0
       options: --user root
       credentials:
         username: ${{ secrets.AZURE_CLIENT_ID }}
