@@ -109,24 +109,25 @@ jobs:
           import os
   
           source_to_path = {
-              "mod-az-subscription": "azure/subscription/",
-              "mod-az-resource-group": "azure/resource-group/",
-              "mod-az-key-vault": "azure/key-vault/",
+              "mod-az-subscription": "azure/subscriptions/",
+              "mod-az-resource-group": "azure/resource-groups/",
+              "mod-az-key-vault": "azure/key-vaults/",
               "mod-az-storage-account": "azure/storage-accounts/",
               "mod-az-log-analytics": "azure/log-analytics/",
-              "mod-az-virtual-network": "azure/virtual-network/",
-              "mod-az-network-security-group": "azure/network-security-group/",
+              "mod-az-virtual-network": "azure/virtual-networks/",
+              "mod-az-network-security-group": "azure/network-security-groups/",
               "mod-az-api-connection": "azure/api-management/connections/",
               "mod-az-api-management": "azure/api-management/instances/",
-              "mod-az-ai-foundry": "azure/ai-foundry/",
-              "mod-az-openai-service": "azure/openai-service/",
-              "mod-az-ai-doc-intelligence": "azure/ai-doc-intelligence/",
-              "mod-az-ml-workspace": "azure/ml-workspace/",
+              "mod-az-ai-foundry": "azure/ai-foundrys/",
+              "mod-az-openai-service": "azure/openai-services/",
+              "mod-az-ai-doc-intelligence": "azure/ai-doc-intelligences/",
+              "mod-az-ml-workspace": "azure/ml-workspaces/",
               "mod-az-ai-services": "azure/ai-services/",
-              "mod-az-app-service-plan": "azure/app-service-plan/",
-              "mod-az-function": "azure/az-function/",
+              "mod-az-app-service-plan": "azure/app-service-plans/",
+              "mod-az-function": "azure/az-functions/",
               "mod-az-application-insights": "azure/az-application-insights/",
               "mod-az-subscription-test": "azure/subscription-test/",
+              "mod-az-storage-account-test": "azure/storage-accounts-test/",
           }
   
           with open("main.tf", "r") as file:
