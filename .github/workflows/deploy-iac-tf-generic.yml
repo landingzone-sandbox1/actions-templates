@@ -161,15 +161,15 @@ jobs:
           case "${{ inputs.environment }}" in
             development)
               echo "backend_resource_group_name=RSGRUS2TFDevelopment" >> $GITHUB_OUTPUT
-              echo "backend_container_name=ctctfstdev" >> $GITHUB_OUTPUT
+              echo "backend_container_name=ctstfstdev" >> $GITHUB_OUTPUT
               ;;
             certification)
-              echo "backend_resource_group_name=pending" >> $GITHUB_OUTPUT
-              echo "backend_container_name=pending" >> $GITHUB_OUTPUT
+              echo "backend_resource_group_name=RSGRUS2TFCertification" >> $GITHUB_OUTPUT
+              echo "backend_container_name=ctstfstcrt" >> $GITHUB_OUTPUT
               ;;
             production)
-              echo "backend_resource_group_name=pending" >> $GITHUB_OUTPUT
-              echo "backend_container_name=pending" >> $GITHUB_OUTPUT
+              echo "backend_resource_group_name=RSGRUS2TFProduction" >> $GITHUB_OUTPUT
+              echo "backend_container_name=ctstfstprd" >> $GITHUB_OUTPUT
               ;;
             *)
               echo "::error::Invalid environment: ${{ inputs.environment }}"
