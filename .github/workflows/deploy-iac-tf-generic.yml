@@ -126,6 +126,9 @@ jobs:
               "mod-az-app-service-plan": "azure/app-service-plans/",
               "mod-az-function": "azure/az-functions/",
               "mod-az-application-insights": "azure/az-application-insights/",
+              "mod-az-azure-firewall": "azure/azure-firewalls/",
+              "mod-az-azure-firewall-policies": "azure/azure-firewalls-policies/",
+              "mod-azure-firewall-rules": "azure/azure-firewalls-rules/",
               "mod-az-subscription-test": "azure/subscription-test/",
               "mod-az-storage-account-test": "azure/storage-accounts-test/",
           }
