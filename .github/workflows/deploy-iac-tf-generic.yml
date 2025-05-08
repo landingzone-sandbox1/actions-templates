@@ -136,6 +136,13 @@ jobs:
               "mod-az-azure-vpn-gateway": "azure/vpn-gateways/",
               "mod-az-azure-app-gateway": "azure/app-gateways/",
               "mod-az-azure-vwan": "azure/vwans/",
+              "mod-az-azure-event-hub": "azure/event-hubs/",
+              "mod-az-aks": "azure/aks/",
+              "mod-az-bastion": "azure/bastions/",
+              "mod-az-azure-management-groups": "azure/management-groups/",
+              "mod-az-dnsresolver": "azure/dnsresolvers/",
+              "mod-az-dnszone": "azure/dnszones/",
+              "mod-az-privatednszone": "azure/privatednszones/",
               "mod-az-subscription-test": "azure/subscription-test/",
               "mod-az-storage-account-test": "azure/storage-accounts-test/",
           }
