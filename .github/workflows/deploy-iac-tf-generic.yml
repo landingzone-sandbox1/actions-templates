@@ -130,7 +130,7 @@ jobs:
               "mod-az-azure-firewall-policies": "azure/firewalls-policies/",
               "mod-az-azure-firewall-rules": "azure/firewalls-rules/",
               "mod-az-azure-api-management": "azure/api-managements/",
-              "mod-az-azure-machine-learning-workspace": "azure/achine-learning-workspaces/",
+              "mod-az-azure-machine-learning-workspace": "azure/machine-learning-workspaces/",
               "mod-az-azure-sql": "azure/azure-sqls/",
               "mod-az-azure-s2s-vpn": "azure/s2s-vpns/",
               "mod-az-azure-vpn-gateway": "azure/vpn-gateways/",
