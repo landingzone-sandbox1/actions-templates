@@ -143,6 +143,10 @@ jobs:
               "mod-az-dnsresolver": "azure/dnsresolvers/",
               "mod-az-dnszone": "azure/dnszones/",
               "mod-az-privatednszone": "azure/privatednszones/",
+              "mod-az-container-registry": "azure/container-registries/",
+              "mod-az-private-endpoint": "azure/private-endpoints/",
+              "mod-az-azure-event-hub-namespace": "azure/event-hub-namespaces/",
+              "mod-az-cosmosdb-account": "azure/cosmosdb-accounts/",
               "mod-az-subscription-test": "azure/subscription-test/",
               "mod-az-storage-account-test": "azure/storage-accounts-test/",
           }
