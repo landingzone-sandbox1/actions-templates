@@ -68,6 +68,10 @@ on:
         required: false
         type: boolean
         default: false
+      plan_only:
+        type: boolean
+        required: false
+        default: false
     secrets:
       GH_REPOSITORY_TOKEN:
         required: true
@@ -230,6 +234,7 @@ jobs:
       TF_VAR_AZURE_CLIENT_ID: ${{  secrets.AZURE_CLIENT_ID }}
       TF_VAR_AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
   apply:
+    if: ${{ inputs.plan_only == false }}
     name: Apply
     uses: "landingzone-sandbox/actions-templates/.github/workflows/iac-tf-apply.yml@main"
     needs: [plan, set-backend-path]
