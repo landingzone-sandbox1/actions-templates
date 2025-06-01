@@ -1,0 +1,117 @@
+on:
+  workflow_call:
+    inputs:
+      terraform_version:
+        type: string
+        required: false
+        default: "~1.9"
+    secrets:
+      GH_REPOSITORY_TOKEN:
+        required: true
+
+jobs:
+  pull-request-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git Config
+        run: |
+          git config --global url."https://git:${{ secrets.GH_REPOSITORY_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://${{ secrets.GH_REPOSITORY_TOKEN }}:x-oauth-basic@github.com/".insteadOf ssh://git@github.com
+          
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_REPOSITORY_TOKEN }}
+
+      - name: Convention Validation Commits
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ inputs.terraform_version }}
+          
+      - name: Terraform Fmt
+        id: fmt
+        run: terraform fmt -check
+
+      - name: Terraform Init
+        id: init
+        run: | 
+         cd ./tests
+         terraform init -backend=false
+
+      - name: Terraform Validate
+        id: validate
+        run: | 
+          cd ./tests
+          terraform validate -no-color 
+            
+      - name: Terraform Test
+        id: test
+        run: | 
+         cd ./tests
+         terraform test
+         
+      - name: Validate Terraform Docs
+        run: |
+          docker pull quay.io/terraform-docs/terraform-docs:latest
+          cp README.md README.md.bak
+          docker run --rm -v $PWD:/src -w /src quay.io/terraform-docs/terraform-docs:latest .
+          if ! diff -q README.md README.md.bak; then
+            echo "Terraform documentation is not up to date. Please run terraform-docs and commit the changes."
+            exit 1
+          fi
+  tfsec:
+    name: Run tfsec sarif report
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+         token: ${{ secrets.GH_REPOSITORY_TOKEN }}
+
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-sarif-action@21ded20e8ca120cd9d3d6ab04ef746477542a608
+        with:
+          sarif_file: tfsec.sarif
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: tfsec.sarif
+
+  tflint:
+    name: TFLint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_REPOSITORY_TOKEN }}
+
+      - name: Cache plugin dir
+        uses: actions/cache@v4
+        with:
+          path: ~/.tflint.d/plugins
+          key: ubuntu-latest-tflint-${{ hashFiles('.tflint.hcl') }}
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.52.0
+
+      - name: Init TFLint
+        run: tflint --init
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_REPOSITORY_TOKEN }}
+
+      - name: Run TFLint
+        run: tflint -f compact --minimum-failure-severity=warning

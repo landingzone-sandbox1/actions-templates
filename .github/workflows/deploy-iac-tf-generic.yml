@@ -151,6 +151,8 @@ jobs:
               "mod-az-private-endpoint": "azure/private-endpoints/",
               "mod-az-azure-event-hub-namespace": "azure/event-hub-namespaces/",
               "mod-az-cosmosdb-account": "azure/cosmosdb-accounts/",
+              "mod-az-cognitive-services": "azure/cognitive-services/",
+              "mod-az-ai-document-intelligence": "azure/ai-document-intelligence/",
               "mod-az-subscription-test": "azure/subscription-test/",
               "mod-az-storage-account-test": "azure/storage-accounts-test/",
           }

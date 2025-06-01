@@ -1,0 +1,69 @@
+on:
+  workflow_call:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TERRAFORM_DOCS_IMAGE: quay.io/terraform-docs/terraform-docs:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate Terraform Documentation
+        run: |
+          docker pull $TERRAFORM_DOCS_IMAGE
+          docker run --rm -v $PWD:/src -w /src $TERRAFORM_DOCS_IMAGE .
+
+      - name: Commit Documentation Changes
+        id: commit_docs
+        run: |
+          git config user.name "svc-gh-innersource_credcorp"
+          git config user.email "svc-gh-innersource_credcorp@users.noreply.github.com"
+          git add .
+          if git diff --staged --quiet; then
+            echo "No documentation changes to commit"
+            echo "commit_sha=" >> $GITHUB_OUTPUT
+          else
+            git commit -m "docs: update terraform documentation"
+            git push https://${{ secrets.GH_REPOSITORY_TOKEN }}@github.com/${{ github.repository }}.git HEAD:${{ github.ref_name }} --force
+            echo "commit_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get Tag Version
+        id: tag_version
+        run: |
+          echo "tag_version=$(head -1 VERSION)" >> $GITHUB_OUTPUT
+          echo "major_version=$(head -1 VERSION | cut -d. -f1)" >> $GITHUB_OUTPUT
+
+      - name: Create Tag
+        id: create_tag
+        uses: anothrNick/github-tag-action@1.67.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CUSTOM_TAG: ${{ steps.tag_version.outputs.tag_version }}
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag_version.outputs.tag_version }}
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+          generate_release_notes: true
+
+      - name: Create Major Version Tag 
+        run: |
+          git tag -f ${{ steps.tag_version.outputs.major_version }}
+          git push origin ${{ steps.tag_version.outputs.major_version }} --force
+
+      - name: Revert Documentation Commit on Failure
+        if: failure() && steps.commit_docs.outputs.commit_sha != ''
+        run: |
+          git reset --hard HEAD~1
+          git push https://${{ secrets.GH_REPOSITORY_TOKEN }}@github.com/${{ github.repository }}.git HEAD:${{ github.ref_name }} --force
