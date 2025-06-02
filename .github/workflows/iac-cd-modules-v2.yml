@@ -17,6 +17,8 @@ jobs:
         with:
           username: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GH_PAT_READ_ORG }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT_READ_ORG }}
 
   release:
     if: github.ref == 'refs/heads/main' && (contains(needs.validation.outputs.teams, 'gh-microsoft-team') || contains(needs.validation.outputs.teams, 'gh-it-engineering'))
@@ -28,7 +30,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_REPOSITORY_TOKEN }}
 
       - name: Generate Terraform Documentation
         run: |
@@ -60,7 +62,7 @@ jobs:
         id: create_tag
         uses: anothrNick/github-tag-action@1.67.0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_REPOSITORY_TOKEN }}
           CUSTOM_TAG: ${{ steps.tag_version.outputs.tag_version }}
 
       - name: Release
@@ -69,13 +71,13 @@ jobs:
           tag_name: ${{ steps.tag_version.outputs.tag_version }}
           draft: false
           prerelease: false
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_REPOSITORY_TOKEN }}
           generate_release_notes: true
 
       - name: Create Major Version Tag 
         run: |
           git tag -f ${{ steps.tag_version.outputs.major_version }}
-          git push origin ${{ steps.tag_version.outputs.major_version }} --force
+          git push https://${{ secrets.GH_REPOSITORY_TOKEN }}@github.com/${{ github.repository }}.git ${{ steps.tag_version.outputs.major_version }} --force
 
       - name: Revert Documentation Commit on Failure
         if: failure() && steps.commit_docs.outputs.commit_sha != ''
