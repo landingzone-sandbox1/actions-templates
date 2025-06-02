@@ -91,3 +91,13 @@ jobs:
         run: |
           git reset --hard HEAD~1
           git push https://${{ secrets.GH_REPOSITORY_TOKEN }}@github.com/${{ github.repository }}.git HEAD:${{ github.ref_name }} --force
+
+  fail_if_not_member:
+    if: github.ref == 'refs/heads/main' && needs.validation.outputs.is_member != 'true'
+    needs: validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if not team member
+        run: |
+          echo "The user does not belong to the authorized team."
+          exit 1
