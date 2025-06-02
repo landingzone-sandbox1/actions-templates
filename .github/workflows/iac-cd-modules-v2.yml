@@ -5,7 +5,22 @@ permissions:
   contents: write
 
 jobs:
+
+  validation:
+    runs-on: ubuntu-latest
+    outputs:
+      teams: ${{ steps.actorTeams.outputs.teams }}
+    steps:
+      - name: Get Teams from the Actor
+        uses: tspascoal/get-user-teams-membership@v2
+        id: actorTeams
+        with:
+          username: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT_READ_ORG }}
+
   release:
+    if: github.ref == 'refs/heads/main' && (contains(needs.validation.outputs.teams, 'gh-microsoft-team') || contains(needs.validation.outputs.teams, 'gh-it-engineering'))
+    needs: validation
     runs-on: ubuntu-latest
     env:
       TERRAFORM_DOCS_IMAGE: quay.io/terraform-docs/terraform-docs:latest
