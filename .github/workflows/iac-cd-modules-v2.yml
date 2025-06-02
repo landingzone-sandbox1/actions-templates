@@ -9,18 +9,26 @@ jobs:
   validation:
     runs-on: ubuntu-latest
     outputs:
-      teams: ${{ steps.actorTeams.outputs.teams }}
+      is_member: ${{ steps.team_check.outputs.is_member }}
     steps:
-      - name: Get Teams from the Actor
-        uses: tspascoal/get-user-teams-membership@v2
-        id: actorTeams
-        with:
-          username: ${{ github.actor }}
-          organization: ${{ github.repository_owner }}
-          GITHUB_TOKEN: ${{ secrets.GH_PAT_READ_ORG }}
+      - name: Check Team Membership via API
+        id: team_check
+        run: |
+          TEAM_SLUG="gh-it"
+          ORG="${{ github.repository_owner }}"
+          USER="${{ github.actor }}"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: token ${{ secrets.GH_PAT_READ_ORG }}" \
+            "https://api.github.com/orgs/$ORG/teams/$TEAM_SLUG/memberships/$USER")
+          if [ "$STATUS" = "204" ]; then
+            echo "is_member=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_member=false" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
 
   release:
-    if: github.ref == 'refs/heads/main' && (contains(needs.validation.outputs.teams, 'gh-microsoft-team') || contains(needs.validation.outputs.teams, 'gh-it-engineering'))
+    if: github.ref == 'refs/heads/main' && needs.validation.outputs.is_member == 'true'
     needs: validation
     runs-on: ubuntu-latest
     env:
