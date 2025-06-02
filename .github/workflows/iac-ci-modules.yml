@@ -54,6 +54,15 @@ jobs:
          cd ./tests
          terraform test
          
+      - name: Validate Terraform Docs
+        run: |
+          docker pull quay.io/terraform-docs/terraform-docs:latest
+          cp README.md README.md.bak
+          docker run --rm -v $PWD:/src -w /src quay.io/terraform-docs/terraform-docs:latest .
+          if ! diff -q README.md README.md.bak; then
+            echo "Terraform documentation is not up to date. Please run terraform-docs and commit the changes."
+            exit 1
+          fi
   tfsec:
     name: Run tfsec sarif report
     runs-on: ubuntu-latest
@@ -77,3 +86,32 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: tfsec.sarif
+
+  tflint:
+    name: TFLint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_REPOSITORY_TOKEN }}
+
+      - name: Cache plugin dir
+        uses: actions/cache@v4
+        with:
+          path: ~/.tflint.d/plugins
+          key: ubuntu-latest-tflint-${{ hashFiles('.tflint.hcl') }}
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.52.0
+
+      - name: Init TFLint
+        run: tflint --init
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_REPOSITORY_TOKEN }}
+
+      - name: Run TFLint
+        run: tflint -f compact --minimum-failure-severity=warning
