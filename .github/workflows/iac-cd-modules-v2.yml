@@ -16,8 +16,7 @@ jobs:
         id: actorTeams
         with:
           username: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GH_PAT_READ_ORG }}
-        env:
+          organization: ${{ github.repository_owner }}
           GITHUB_TOKEN: ${{ secrets.GH_PAT_READ_ORG }}
 
   release:
