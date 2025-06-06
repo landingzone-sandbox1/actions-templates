@@ -153,6 +153,8 @@ jobs:
               "mod-az-cosmosdb-account": "azure/cosmosdb-accounts/",
               "mod-az-cognitive-services": "azure/cognitive-services/",
               "mod-az-ai-document-intelligence": "azure/ai-document-intelligence/",
+              "mod-az-azure-windows-virtual-machine": "azure/windows-virtual-machines/",
+              "mod-az-managed-identities": "azure/managed-identities/",
               "mod-az-subscription-test": "azure/subscription-test/",
               "mod-az-storage-account-test": "azure/storage-accounts-test/",
           }
