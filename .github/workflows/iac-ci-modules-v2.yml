@@ -110,11 +110,7 @@ jobs:
       
       - name: Create TFLint config
         run: |
-          cat <<EOF > .tflint.hcl
-          rule "terraform_module_pinned_source" {
-            enabled = false
-          }
-          EOF      
+          printf 'rule "terraform_module_pinned_source" {\n  enabled = false\n}\n' > .tflint.hcl
 
       - name: Init TFLint
         run: tflint --init
