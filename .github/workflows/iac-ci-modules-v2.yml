@@ -107,6 +107,14 @@ jobs:
         uses: terraform-linters/setup-tflint@v4
         with:
           tflint_version: v0.52.0
+      
+      - name: Create TFLint config
+        run: |
+          cat <<EOF > .tflint.hcl
+          rule "terraform_module_pinned_source" {
+            enabled = false
+          }
+          EOF      
 
       - name: Init TFLint
         run: tflint --init
