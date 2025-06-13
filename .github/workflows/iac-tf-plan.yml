@@ -118,6 +118,7 @@ jobs:
           git config --global url."https://${{ secrets.GH_REPOSITORY_TOKEN }}:x-oauth-basic@github.com/".insteadOf ssh://git@github.com
 
       - name: Terraform Init
+        shell: bash
         working-directory: ${{ inputs.project_name_directory }}
         run: |
           # Initialize Terraform and capture warnings to fail on missing backend block
