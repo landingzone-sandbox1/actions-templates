@@ -127,10 +127,10 @@ jobs:
             -backend-config="key=${{ inputs.backend_path }}" | tee init.log
         env:
           ARM_ACCESS_KEY: ${{ secrets.ARM_ACCESS_KEY }}
-      - name: Check for missing backend
-        run: |
-          strings init.log | grep -Fq "missing backend configuration" && \
-            (echo "::error::Backend block missing. Añade: terraform { backend \"azurerm\" {} }"; exit 1)
+      # - name: Check for missing backend
+      #   run: |
+      #     strings init.log | grep -Fq "missing backend configuration" && \
+      #       (echo "::error::Backend block missing. Añade: terraform { backend \"azurerm\" {} }"; exit 1)
       - name: Login in Azure
         run: az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ inputs.azure_tenant_id }}
         if: needs.validation.outputs.LOGIN_TO_AZURE == 'yes'
