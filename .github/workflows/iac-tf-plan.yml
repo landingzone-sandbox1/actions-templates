@@ -116,7 +116,6 @@ jobs:
         run: |
           git config --global url."https://git:${{ secrets.GH_REPOSITORY_TOKEN }}@github.com/".insteadOf "https://github.com/"
           git config --global url."https://${{ secrets.GH_REPOSITORY_TOKEN }}:x-oauth-basic@github.com/".insteadOf ssh://git@github.com
-
       - name: Terraform Init
         working-directory: ${{ inputs.project_name_directory }}
         run: |
@@ -131,12 +130,17 @@ jobs:
           # Show the init output
           cat init.log
           
+          echo "::debug::About to run grep."
           # Fail if Azure backend block is missing in main.tf
           if grep -q "Warning: Missing backend configuration" init.log; then
+            echo "::error::GREP FOUND THE WARNING. THIS STEP SHOULD FAIL NOW."
             echo "::error::Backend block missing in main.tf. Please add:"
             echo "::error::terraform { backend \"azurerm\" {} }"
             exit 1
+          else
+            echo "::debug::GREP DID NOT FIND THE WARNING."
           fi
+          echo "::debug::Script finished without explicit exit."
         env:
           ARM_ACCESS_KEY: ${{ secrets.ARM_ACCESS_KEY }}
 
