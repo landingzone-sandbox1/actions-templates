@@ -116,10 +116,6 @@ jobs:
         run: |
           git config --global url."https://git:${{ secrets.GH_REPOSITORY_TOKEN }}@github.com/".insteadOf "https://github.com/"
           git config --global url."https://${{ secrets.GH_REPOSITORY_TOKEN }}:x-oauth-basic@github.com/".insteadOf ssh://git@github.com
-      - name: Check for missing backend
-        run: |
-          strings init.log | grep -Fq "missing backend configuration" && \
-            (echo "::error::Backend block missing. Añade: terraform { backend \"azurerm\" {} }"; exit 1)
       - name: Terraform Init
         working-directory: ${{ inputs.project_name_directory }}
         run: |
@@ -129,20 +125,12 @@ jobs:
             -backend-config="container_name=${{ inputs.backend_container_name }}" \
             -backend-config="resource_group_name=${{ inputs.backend_resource_group_name }}" \
             -backend-config="key=${{ inputs.backend_path }}" | tee init.log
-          # Fail on missing backend configuration warning
-          if grep -q "Warning: Missing backend configuration" init.log; then
-            echo "::error::Backend block missing in configuration. Please add: terraform { backend \"azurerm\" {} }"
-            exit 1
-          fi
         env:
           ARM_ACCESS_KEY: ${{ secrets.ARM_ACCESS_KEY }}
-      
       - name: Check for missing backend
         run: |
           strings init.log | grep -Fq "missing backend configuration" && \
             (echo "::error::Backend block missing. Añade: terraform { backend \"azurerm\" {} }"; exit 1)
-
-
       - name: Login in Azure
         run: az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ inputs.azure_tenant_id }}
         if: needs.validation.outputs.LOGIN_TO_AZURE == 'yes'
