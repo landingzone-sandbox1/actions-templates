@@ -157,7 +157,7 @@ jobs:
               "mod-az-managed-identities": "azure/managed-identities/",
               "mod-az-subscription-test": "azure/subscription-test/",
               "mod-az-storage-account-test": "azure/storage-accounts-test/",
-              "mod-az-az-ai-search": "azure/ai-search/",
+              "mod-az-ai-search": "azure/ai-search/",
           }
   
           with open("main.tf", "r") as file:
