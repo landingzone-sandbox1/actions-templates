@@ -202,8 +202,8 @@ jobs:
               echo "backend_container_name=ctstfstprd" >> $GITHUB_OUTPUT
               ;;
             infrastructure)
-              echo "backend_resource_group_name=RSGRUS2TFInfrastructure" >> $GITHUB_OUTPUT
-              echo "backend_container_name=ctstfstprd" >> $GITHUB_OUTPUT
+              echo "backend_resource_group_name=RSGRUS2TFProduction" >> $GITHUB_OUTPUT
+              echo "backend_container_name=ctstfstinfra" >> $GITHUB_OUTPUT
               ;;
             *)
               echo "::error::Invalid environment: ${{ inputs.environment }}"
