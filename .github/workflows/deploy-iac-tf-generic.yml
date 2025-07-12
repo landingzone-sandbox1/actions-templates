@@ -158,8 +158,8 @@ jobs:
               "mod-az-subscription-test": "azure/subscription-test/",
               "mod-az-storage-account-test": "azure/storage-accounts-test/",
               "mod-az-ai-search": "azure/ai-search/",
-              "mod-az-subnet": "azure/virtual-networks/subnets/"
-              "mod-az-azure-linux-virtual-machine": "azure/linux-virtual-machines/",
+              "mod-az-subnet": "azure/virtual-networks/subnets/",
+              "mod-az-azure-linux-virtual-machine": "azure/linux-virtual-machines/"
           }
   
           with open("main.tf", "r") as file:
