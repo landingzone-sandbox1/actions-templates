@@ -167,7 +167,7 @@ jobs:
           with open("main.tf", "r") as file:
               content = file.read()
   
-          source_match =  re.search(r'source\s*=\s*"git::(?:ssh://git@github\.com|https://github\.com)/[^/]+/([^\"]+)"', content)
+          source_match =  r.search(r'source\s*=\s*"git::(?:ssh://git@github\.com|https://github\.com)/[^/]+/([^\"]+)"', content)
           if source_match:
               source_value = source_match.group(1)
               repo_name_match = re.search(r"(iac-mod-az-[^/\?\.]+)", source_value)
