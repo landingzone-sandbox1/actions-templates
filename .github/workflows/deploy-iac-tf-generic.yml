@@ -249,7 +249,7 @@ jobs:
   apply:
     if: ${{ inputs.plan_only == false }}
     name: Apply
-    uses: "landingzone-sandbox/actions-templates/.github/workflows/iac-tf-apply.yml@main"
+    uses: "landingzone-sandbox1/actions-templates/.github/workflows/iac-tf-apply.yml@main"
     needs: [plan, set-backend-path]
     with:
       environment: ${{ inputs.environment }}
