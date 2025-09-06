@@ -1,96 +1,36 @@
 name: Deployment IaC Terraform Generic
+
 on:
   workflow_call:
     inputs:
-      environment:
-        description: "Environment"
-        required: true
-        type: string
-      destroy:
-        type: boolean
-        required: false
-        default: false
-      multiple_variable:
-        type: boolean
-        required: false
-        default: false
-      backend_storage_account_name:
-        description: "Backend Storage Account Name"
-        required: true
-        type: string
-      backend_container_name:
-        description: "Backend Container Name"
-        required: false
-        type: string
-      backend_resource_group_name:
-        description: "Backend Resource Group Name"
-        required: false
-        type: string
-      backend_path:
-        description: "Backend Path to the state file"
-        required: false
-        type: string
-      tfvars_directory:
-        description: "Directory Name Into tfvars File"
-        default: "workspaces"
-        required: false
-        type: string
-      project_name_directory:
-        description: "Project Name Directory"
-        default: "."
-        type: string
-        required: false
-      is_named_value_key_vault:
-        description: "Validate if is Named Value Key Vault Secret"
-        default: false
-        type: boolean
-        required: false
-      AZURE_TENANT_ID:
-        required: true
-        type: string
-      AZURE_SUBSCRIPTION_ID:
-        required: true
-        type: string
-      LOGIN_TO_AZURE:
-        description: "Validate if it is necessary to log in to azure"
-        default: false
-        type: boolean
-        required: false
-      USE_RUNNER_SELF_HOSTED:
-        description: "Use runner self hosted"
-        default: false
-        type: boolean
-        required: false
-      TF_VAR_AZURE_TENANT_ID:
-        required: false
-        type: string
-      created_subscription:
-        required: false
-        type: boolean
-        default: false
-      plan_only:
-        type: boolean
-        required: false
-        default: false
+      environment: { description: "Environment", required: true, type: string }
+      destroy: { type: boolean, required: false, default: false }
+      multiple_variable: { type: boolean, required: false, default: false }
+      backend_storage_account_name: { description: "Backend Storage Account Name", required: true, type: string }
+      backend_container_name: { description: "Backend Container Name", required: false, type: string }
+      backend_resource_group_name: { description: "Backend Resource Group Name", required: false, type: string }
+      backend_path: { description: "Backend Path to the state file", required: false, type: string }
+      tfvars_directory: { description: "Directory Name Into tfvars File", required: false, default: "workspaces", type: string }
+      project_name_directory: { description: "Project Name Directory", required: false, default: ".", type: string }
+      is_named_value_key_vault: { description: "Validate if is Named Value Key Vault Secret", required: false, default: false, type: boolean }
+      AZURE_TENANT_ID: { required: true, type: string }
+      AZURE_SUBSCRIPTION_ID: { required: true, type: string }
+      LOGIN_TO_AZURE: { description: "Validate if it is necessary to log in to azure", required: false, default: false, type: boolean }
+      USE_RUNNER_SELF_HOSTED: { description: "Use runner self hosted", required: false, default: false, type: boolean }
+      TF_VAR_AZURE_TENANT_ID: { required: false, type: string }
+      created_subscription: { required: false, type: boolean, default: false }
+      plan_only: { type: boolean, required: false, default: false }
     secrets:
-      GH_REPOSITORY_TOKEN:
-        required: true
-      AZURE_CLIENT_ID:
-        required: true
-      AZURE_CLIENT_SECRET:
-        required: true
-      ARM_ACCESS_KEY:
-        required: true
-      GH_APP_ID:
-        required: false
-      GH_APP_INSTALLATION_ID:
-        required: false
-      GH_APP_PEM_FILE:
-        required: false
-      TF_VAR_AZURE_CLIENT_ID:
-        required: false
-      TF_VAR_AZURE_CLIENT_SECRET:
-        required: false
+      GH_REPOSITORY_TOKEN: { required: true }
+      AZURE_CLIENT_ID: { required: true }
+      AZURE_CLIENT_SECRET: { required: true }
+      ARM_ACCESS_KEY: { required: true }
+      GH_APP_ID: { required: false }
+      GH_APP_INSTALLATION_ID: { required: false }
+      GH_APP_PEM_FILE: { required: false }
+      TF_VAR_AZURE_CLIENT_ID: { required: false }
+      TF_VAR_AZURE_CLIENT_SECRET: { required: false }
+
 jobs:
   set-backend-path:
     name: Set Backend Path
@@ -103,124 +43,72 @@ jobs:
       backend_container_name: ${{ steps.set-backend-resource-group.outputs.backend_container_name }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
-      
+        uses: actions/checkout@v4
+
+      # Calcula el key del tfstate. SOLO acepta fuentes https://github.com/
+      # Fallback: azure/resource-groups/<repo>.tfstate si no puede inferir el módulo.
       - name: Set Backend Path
         id: set-path
+        shell: bash
+        env:
+          PROJECT_DIR: ${{ inputs.project_name_directory }}
+          DEFAULT_PREFIX: azure/resource-groups/
         run: |
-          echo '
-          import re
-          import os
-  
-          source_to_path = {
-              "mod-az-subscription": "azure/subscriptions/",
-              "mod-az-resource-group": "azure/resource-groups/",
-              "mod-az-key-vault": "azure/key-vaults/",
-              "mod-az-storage-account": "azure/storage-accounts/",
-              "mod-az-log-analytics": "azure/log-analytics/",
-              "mod-az-virtual-network": "azure/virtual-networks/",
-              "mod-az-network-security-group": "azure/network-security-groups/",
-              "mod-az-api-connection": "azure/api-management/connections/",
-              "mod-az-api-management": "azure/api-management/instances/",
-              "mod-az-ai-foundry": "azure/ai-foundrys/",
-              "mod-az-openai-service": "azure/openai-services/",
-              "mod-az-ai-doc-intelligence": "azure/ai-doc-intelligences/",
-              "mod-az-ml-workspace": "azure/ml-workspaces/",
-              "mod-az-ai-services": "azure/ai-services/",
-              "mod-az-app-service-plan": "azure/app-service-plans/",
-              "mod-az-function": "azure/functions/",
-              "mod-az-application-insights": "azure/application-insights/",
-              "mod-az-azure-firewall": "azure/firewalls/",
-              "mod-az-azure-firewall-policies": "azure/firewalls-policies/",
-              "mod-az-azure-firewall-rules": "azure/firewalls-rules/",
-              "mod-az-azure-api-management": "azure/api-managements/",
-              "mod-az-azure-machine-learning-workspace": "azure/machine-learning-workspaces/",
-              "mod-az-azure-sql": "azure/azure-sqls/",
-              "mod-az-azure-s2s-vpn": "azure/s2s-vpns/",
-              "mod-az-azure-vpn-gateway": "azure/vpn-gateways/",
-              "mod-az-azure-app-gateway": "azure/app-gateways/",
-              "mod-az-azure-vwan": "azure/vwans/",
-              "mod-az-azure-event-hub": "azure/event-hubs/",
-              "mod-az-aks": "azure/aks/",
-              "mod-az-bastion": "azure/bastions/",
-              "mod-az-azure-management-groups": "azure/management-groups/",
-              "mod-az-dnsresolver": "azure/dnsresolvers/",
-              "mod-az-dnszone": "azure/dnszones/",
-              "mod-az-privatednszone": "azure/privatednszones/",
-              "mod-az-container-registry": "azure/container-registries/",
-              "mod-az-private-endpoint": "azure/private-endpoints/",
-              "mod-az-azure-event-hub-namespace": "azure/event-hub-namespaces/",
-              "mod-az-cosmosdb-account": "azure/cosmosdb-accounts/",
-              "mod-az-cognitive-services": "azure/cognitive-services/",
-              "mod-az-ai-document-intelligence": "azure/ai-document-intelligence/",
-              "mod-az-azure-windows-virtual-machine": "azure/windows-virtual-machines/",
-              "mod-az-managed-identities": "azure/managed-identities/",
-              "mod-az-subscription-test": "azure/subscription-test/",
-              "mod-az-storage-account-test": "azure/storage-accounts-test/",
-              "mod-az-ai-search": "azure/ai-search/",
-              "mod-az-subnet": "azure/virtual-networks/subnets/",
-              "mod-az-azure-linux-virtual-machine": "azure/linux-virtual-machines/",
-              "mod-az-redis-cache": "azure/redis-caches/",
-              "mod-az-management-groups": "azure/management-groups/"
-          }
-  
-          with open("main.tf", "r") as file:
-              content = file.read()
-  
-          source_match =  re.search(
-              r'source\s*=\s*"git::https://github\.com/[^/]+/([^"/\?]+)(?:\.git)?(?:\?ref=[^"]+)?"',
-              content
-          )
-          
-          if source_match:
-              source_value = source_match.group(1)
-              repo_name_match = re.search(r"(iac-mod-az-[^/\?\.]+)", source_value)
-              if repo_name_match:
-                  repo_name = repo_name_match.group(1)
-                  current_repo_name = os.getenv("REPO_NAME")
-                  repo_key = repo_name.replace("iac-", "")
-                  if repo_key in source_to_path:
-                      backend_path = "{}{}.tfstate".format(source_to_path[repo_key], current_repo_name)
-                      with open(os.environ["GITHUB_OUTPUT"], "a") as github_output:
-                          github_output.write(f"backend_path={backend_path}\n")
-                      print(f"Set backend_path to: {backend_path}")    
-                  else:
-                      print("::error::No matching backend path found.")
-              else:
-                  print("::error::Repository name not found in source value.")
-          else:
-              print("::error::Source argument not found in main.tf.")
-          ' > script.py
-          python script.py
+          python3 - <<'PY'
+          import os, re, sys, pathlib
+          proj = os.environ.get("PROJECT_DIR",".")
+          tf = pathlib.Path(proj)/"main.tf"
+          current_repo = (os.getenv("GITHUB_REPOSITORY","").split("/")[-1]
+                          or os.getenv("REPO_NAME","repo"))
+          backend_path = f'{os.environ.get("DEFAULT_PREFIX","azure/resource-groups/")}{current_repo}.tfstate'
+
+          if tf.exists():
+              content = tf.read_text(encoding="utf-8")
+              m = re.search(
+                  r'source\s*=\s*"(?:git::)?https://github\.com/[^/]+/([^"/\?]+)(?:\.git)?(?:\?ref=[^"]+)?"',
+                  content
+              )
+              if m:
+                  repo_src = m.group(1)                 # ej: iac-mod-az-resource-group
+                  key = repo_src.replace("iac-","")     # -> mod-az-resource-group
+                  mapping = {
+                    "mod-az-resource-group": "azure/resource-groups/",
+                    "mod-az-key-vault":      "azure/key-vaults/",
+                    "mod-az-storage-account":"azure/storage-accounts/",
+                    "mod-az-log-analytics":  "azure/log-analytics/",
+                  }
+                  prefix = mapping.get(key)
+                  if prefix:
+                      backend_path = f"{prefix}{current_repo}.tfstate"
+
+          with open(os.environ["GITHUB_OUTPUT"],"a") as f:
+              f.write(f"backend_path={backend_path}\n")
+          print(f"backend_path={backend_path}")
+          PY
 
       - name: Set Backend Resource Group Name
         id: set-backend-resource-group
+        shell: bash
         run: |
-          case "${{ inputs.environment }}" in
-            development)
-              echo "backend_resource_group_name=rg-tfstates-dev" >> $GITHUB_OUTPUT
-              echo "backend_container_name=tfstate" >> $GITHUB_OUTPUT
-              ;;
-            certification)
-              echo "backend_resource_group_name=RSGRUS2TFCertification" >> $GITHUB_OUTPUT
-              echo "backend_container_name=ctstfstcrt" >> $GITHUB_OUTPUT
-              ;;
-            production)
-              echo "backend_resource_group_name=RSGRUS2TFProduction" >> $GITHUB_OUTPUT
-              echo "backend_container_name=ctstfstprd" >> $GITHUB_OUTPUT
-              ;;
-            infrastructure)
-              echo "backend_resource_group_name=RSGRUS2TFProduction" >> $GITHUB_OUTPUT
-              echo "backend_container_name=ctstfstinfra" >> $GITHUB_OUTPUT
-              ;;
-            *)
-              echo "::error::Invalid environment: ${{ inputs.environment }}"
-              exit 1
-              ;;
-          esac
-      - name: show outputs
+          rg="${{ inputs.backend_resource_group_name }}"
+          ct="${{ inputs.backend_container_name }}"
+          if [ -z "$rg" ] || [ -z "$ct" ]; then
+            case "${{ inputs.environment }}" in
+              development)   rg="rg-tfstates-dev";        ct="tfstate" ;;
+              certification) rg="RSGRUS2TFCertification"; ct="ctstfstcrt" ;;
+              production)    rg="RSGRUS2TFProduction";    ct="ctstfstprd" ;;
+              infrastructure)rg="RSGRUS2TFProduction";    ct="ctstfstinfra" ;;
+              *) echo "::error::Invalid environment: ${{ inputs.environment }}"; exit 1 ;;
+            esac
+          fi
+          echo "backend_resource_group_name=$rg" >> "$GITHUB_OUTPUT"
+          echo "backend_container_name=$ct" >> "$GITHUB_OUTPUT"
+
+      - name: Show outputs (debug)
         run: |
-          cat $GITHUB_OUTPUT
+          echo "backend_path=${{ steps.set-path.outputs.backend_path }}"
+          echo "backend_resource_group_name=${{ steps.set-backend-resource-group.outputs.backend_resource_group_name }}"
+          echo "backend_container_name=${{ steps.set-backend-resource-group.outputs.backend_container_name }}"
 
   plan:
     name: Plan
@@ -231,9 +119,9 @@ jobs:
       destroy: ${{ inputs.destroy }}
       multiple_variable: ${{ inputs.multiple_variable }}
       backend_storage_account_name: ${{ inputs.backend_storage_account_name }}
-      backend_container_name: ${{ needs['set-backend-path'].outputs.backend_container_name }}
-      backend_resource_group_name: ${{ needs['set-backend-path'].outputs.backend_resource_group_name }}
-      backend_path: ${{ needs['set-backend-path'].outputs.backend_path }}
+      backend_container_name: ${{ needs.set-backend-path.outputs.backend_container_name }}
+      backend_resource_group_name: ${{ needs.set-backend-path.outputs.backend_resource_group_name }}
+      backend_path: ${{ needs.set-backend-path.outputs.backend_path }}
       tfvars_directory: ${{ inputs.tfvars_directory }}
       project_name_directory: ${{ inputs.project_name_directory }}
       AZURE_TENANT_ID: ${{ inputs.AZURE_TENANT_ID }}
@@ -242,14 +130,15 @@ jobs:
       LOGIN_TO_AZURE: ${{ inputs.LOGIN_TO_AZURE }}
       USE_RUNNER_SELF_HOSTED: ${{ inputs.USE_RUNNER_SELF_HOSTED }}
       TF_VAR_AZURE_TENANT_ID: ${{ inputs.AZURE_TENANT_ID }}
-      created_subscription: ${{inputs.created_subscription}}
+      created_subscription: ${{ inputs.created_subscription }}
     secrets:
       GH_REPOSITORY_TOKEN: ${{ secrets.GH_REPOSITORY_TOKEN }}
       AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
       ARM_ACCESS_KEY: ${{ secrets.ARM_ACCESS_KEY }}
-      TF_VAR_AZURE_CLIENT_ID: ${{  secrets.AZURE_CLIENT_ID }}
+      TF_VAR_AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       TF_VAR_AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+
   apply:
     if: ${{ inputs.plan_only == false }}
     name: Apply
@@ -260,9 +149,9 @@ jobs:
       destroy: ${{ inputs.destroy }}
       multiple_variable: ${{ inputs.multiple_variable }}
       backend_storage_account_name: ${{ inputs.backend_storage_account_name }}
-      backend_container_name: ${{ needs['set-backend-path'].outputs.backend_container_name }}
-      backend_resource_group_name: ${{ needs['set-backend-path'].outputs.backend_resource_group_name }}
-      backend_path: ${{ needs['set-backend-path'].outputs.backend_path }}
+      backend_container_name: ${{ needs.set-backend-path.outputs.backend_container_name }}
+      backend_resource_group_name: ${{ needs.set-backend-path.outputs.backend_resource_group_name }}
+      backend_path: ${{ needs.set-backend-path.outputs.backend_path }}
       tfvars_directory: ${{ inputs.tfvars_directory }}
       project_name_directory: ${{ inputs.project_name_directory }}
       AZURE_TENANT_ID: ${{ inputs.AZURE_TENANT_ID }}
@@ -271,11 +160,11 @@ jobs:
       LOGIN_TO_AZURE: ${{ inputs.LOGIN_TO_AZURE }}
       USE_RUNNER_SELF_HOSTED: ${{ inputs.USE_RUNNER_SELF_HOSTED }}
       TF_VAR_AZURE_TENANT_ID: ${{ inputs.AZURE_TENANT_ID }}
-      created_subscription: ${{inputs.created_subscription}}
+      created_subscription: ${{ inputs.created_subscription }}
     secrets:
       GH_REPOSITORY_TOKEN: ${{ secrets.GH_REPOSITORY_TOKEN }}
       AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
       ARM_ACCESS_KEY: ${{ secrets.ARM_ACCESS_KEY }}
-      TF_VAR_AZURE_CLIENT_ID: ${{  secrets.AZURE_CLIENT_ID }}
+      TF_VAR_AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       TF_VAR_AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
