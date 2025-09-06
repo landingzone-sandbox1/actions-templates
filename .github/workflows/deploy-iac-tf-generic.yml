@@ -194,8 +194,8 @@ jobs:
         run: |
           case "${{ inputs.environment }}" in
             development)
-              echo "backend_resource_group_name=RSGRUS2TFDevelopment" >> $GITHUB_OUTPUT
-              echo "backend_container_name=ctstfstdev" >> $GITHUB_OUTPUT
+              echo "backend_resource_group_name=rg-tfstates-dev" >> $GITHUB_OUTPUT
+              echo "backend_container_name=tfstate" >> $GITHUB_OUTPUT
               ;;
             certification)
               echo "backend_resource_group_name=RSGRUS2TFCertification" >> $GITHUB_OUTPUT
@@ -220,7 +220,7 @@ jobs:
 
   plan:
     name: Plan
-    uses: "landingzone-sandbox/actions-templates/.github/workflows/iac-tf-plan.yml@main"
+    uses: "landingzone-sandbox1/actions-templates/.github/workflows/iac-tf-plan.yml@main"
     needs: [set-backend-path]
     with:
       environment: ${{ inputs.environment }}
